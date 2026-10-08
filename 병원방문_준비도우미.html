@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <title>병원 방문 준비 도우미</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20312d;
+      --muted: #667873;
+      --line: #dfe7e1;
+      --paper: #ffffff;
+      --canvas: #f5f7f4;
+      --green: #236c58;
+      --green-dark: #174c3e;
+      --mint: #e7f3ed;
+      --peach: #fbf0e5;
+      --shadow: 0 16px 40px rgba(36, 67, 54, .08);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); line-height: 1.55; }
+    button, input, select { font: inherit; }
+    .page { width: min(1040px, calc(100% - 36px)); margin: 0 auto; padding: 46px 0 56px; }
+    header { max-width: 720px; margin-bottom: 30px; }
+    .eyebrow { color: var(--green); font-weight: 750; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 8px 0 10px; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.15; letter-spacing: -.045em; }
+    .intro { margin: 0; color: var(--muted); font-size: 1.05rem; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+    .main-panel { padding: clamp(20px, 4vw, 32px); }
+    .side-panel { padding: 24px; position: sticky; top: 18px; }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+    h2 { margin: 0; font-size: 1.15rem; letter-spacing: -.02em; }
+    .hint { color: var(--muted); font-size: .88rem; }
+    .situations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 30px; }
+    .situation { min-height: 76px; display: flex; gap: 12px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+    .situation:hover { transform: translateY(-1px); border-color: #9ebeb0; }
+    .situation:has(input:checked) { border-color: var(--green); background: var(--mint); }
+    .situation input, .check-row input { width: 19px; height: 19px; accent-color: var(--green); flex: 0 0 auto; }
+    .situation strong { display: block; font-size: .97rem; }
+    .situation small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
+    .check-area { border-top: 1px solid var(--line); padding-top: 25px; }
+    .check-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .progress { color: var(--green); font-size: .84rem; font-weight: 700; white-space: nowrap; }
+    .group { margin-top: 21px; }
+    .group h3 { margin: 0 0 8px; color: var(--muted); font-size: .83rem; letter-spacing: .035em; }
+    .check-list { display: grid; gap: 2px; }
+    .check-row { display: flex; align-items: flex-start; gap: 11px; padding: 10px 9px; border-radius: 10px; cursor: pointer; }
+    .check-row:hover { background: #f7f9f7; }
+    .check-row input { margin: 2px 0 0; }
+    .check-row input:checked + span { color: #80908b; text-decoration: line-through; }
+    .empty { color: var(--muted); font-size: .9rem; padding: 12px 0; }
+    .fields { display: grid; gap: 18px; margin-top: 21px; }
+    .field label { display: block; font-size: .9rem; font-weight: 700; margin-bottom: 7px; }
+    .field select, .field input[type="time"] { width: 100%; border: 1px solid #cfdad3; background: #fff; border-radius: 11px; padding: 12px 13px; color: var(--ink); min-height: 48px; }
+    .field select:focus, .field input:focus { outline: 3px solid #d5eadf; border-color: var(--green); }
+    .field-note { color: var(--muted); font-size: .8rem; margin-top: 5px; }
+    .result { margin-top: 22px; padding: 19px; border-radius: 15px; background: var(--mint); }
+    .result-label { color: var(--green-dark); font-size: .82rem; font-weight: 750; }
+    .departure { margin: 2px 0 7px; color: var(--green-dark); font-size: clamp(2rem, 5vw, 2.7rem); font-weight: 800; letter-spacing: -.045em; line-height: 1.2; }
+    .result-detail { margin: 0; color: #4c675d; font-size: .88rem; }
+    .notice { margin: 16px 0 0; color: var(--muted); font-size: .78rem; }
+    .reset { width: 100%; border: 0; background: transparent; color: var(--green); font-weight: 700; padding: 12px 8px 2px; cursor: pointer; }
+    .reset:hover { text-decoration: underline; }
+    .footer-note { margin: 17px 2px 0; color: var(--muted); font-size: .78rem; }
+    @media (max-width: 760px) {
+      .page { padding-top: 30px; }
+      .layout { grid-template-columns: 1fr; }
+      .side-panel { position: static; }
+    }
+    @media (max-width: 460px) {
+      .page { width: min(100% - 24px, 560px); }
+      .situations { grid-template-columns: 1fr; }
+      .situation { min-height: 68px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="eyebrow">방문 전 한 번에 준비하기</div>
+      <h1>병원 방문 준비 도우미</h1>
+      <p class="intro">방문 상황에 맞는 준비물을 확인하고, 병원 도착 시간에 맞춰 출발 시각을 계산해 보세요.</p>
+    </header>
+
+    <div class="layout">
+      <section class="panel main-panel" aria-labelledby="situation-heading">
+        <div class="section-heading">
+          <h2 id="situation-heading">나의 방문 상황</h2>
+          <span class="hint">해당하는 항목을 모두 선택</span>
+        </div>
+        <div class="situations" id="situations">
+          <label class="situation"><input type="checkbox" value="alone"><span><strong>혼자 방문</strong><small>동행자 없이 병원에 가요</small></span></label>
+          <label class="situation"><input type="checkbox" value="infant"><span><strong>영아와 함께</strong><small>아기와 동행해요</small></span></label>
+          <label class="situation"><input type="checkbox" value="wheelchair"><span><strong>휠체어 이용</strong><small>이동 시 휠체어가 필요해요</small></span></label>
+          <label class="situation"><input type="checkbox" value="interpreter"><span><strong>통역 필요</strong><small>진료와 안내에 통역이 필요해요</small></span></label>
+        </div>
+
+        <div class="check-area">
+          <div class="check-title">
+            <h2>방문 준비물</h2>
+            <span class="progress" id="progress" aria-live="polite"></span>
+          </div>
+          <p class="hint" style="margin:0">챙긴 항목에 표시해 두세요.</p>
+          <div id="checklists"></div>
+        </div>
+      </section>
+
+      <aside class="panel side-panel" aria-labelledby="time-heading">
+        <div class="section-heading">
+          <h2 id="time-heading">출발 시간 계산</h2>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label for="arrival">병원 도착 희망 시간</label>
+            <input id="arrival" type="time" step="900" value="10:00">
+            <div class="field-note">15분 단위로 입력할 수 있어요.</div>
+          </div>
+          <div class="field">
+            <label for="travel">이동 시간</label>
+            <select id="travel" aria-label="이동 시간 (분)"></select>
+          </div>
+          <div class="field">
+            <label for="buffer">여유 시간</label>
+            <select id="buffer" aria-label="여유 시간 (분)"></select>
+            <div class="field-note">주차, 접수, 엘리베이터 대기 등에 사용할 시간</div>
+          </div>
+        </div>
+        <div class="result" aria-live="polite" aria-atomic="true">
+          <div class="result-label">추천 출발 시간</div>
+          <div class="departure" id="departure">—</div>
+          <p class="result-detail" id="calculation">도착 시간과 이동 시간을 확인해 주세요.</p>
+        </div>
+        <button class="reset" id="reset" type="button">시간 입력 초기화</button>
+        <p class="notice">계산식: 도착 희망 시간 − 이동 시간 − 여유 시간</p>
+      </aside>
+    </div>
+    <p class="footer-note">준비물은 일반적인 예시입니다. 병원이나 진료 내용에 따라 필요한 서류와 절차를 미리 확인해 주세요.</p>
+  </main>
+
+  <script>
+    const commonItems = [
+      '사진이 있는 신분증',
+      '예약 확인 정보 또는 진료 의뢰서(해당하는 경우)',
+      '복용 중인 약 목록과 약 알레르기 정보',
+      '최근 검사 결과나 다른 병원 진료 기록(있는 경우)',
+      '결제 수단과 필요한 보험·자격 정보'
+    ];
+    const situationItems = {
+      alone: { title: '혼자 방문', items: ['가족 또는 지인의 연락처와 귀가 방법 확인', '진료 후 도움이 필요할 때 연락할 사람 정해두기'] },
+      infant: { title: '영아와 함께', items: ['기저귀, 물티슈, 여벌 옷', '수유·이유식 용품과 아기에게 필요한 간식 또는 물', '아기 담요나 이동용품(유모차·아기띠 등)', '예방접종 수첩 또는 아기 진료 기록(해당하는 경우)'] },
+      wheelchair: { title: '휠체어 이용', items: ['휠체어와 전동 휠체어 충전기(해당하는 경우)', '병원에 휠체어 접근 가능한 출입구·엘리베이터 확인', '이동 보조나 차량 승하차 지원이 필요하면 병원에 미리 문의'] },
+      interpreter: { title: '통역 필요', items: ['통역 예약 여부와 통역 지원 방식 확인', '진료 때 전하고 싶은 증상·질문을 적어두기', '복용 약 이름과 중요한 의료 정보를 통역 가능한 언어로 준비', '진료 예약 확인서와 병원 연락처'] }
+    };
+
+    const situations = document.getElementById('situations');
+    const checklists = document.getElementById('checklists');
+    const progress = document.getElementById('progress');
+    const arrival = document.getElementById('arrival');
+    const travel = document.getElementById('travel');
+    const buffer = document.getElementById('buffer');
+    const departure = document.getElementById('departure');
+    const calculation = document.getElementById('calculation');
+
+    function fillDurationSelect(select, max, selected) {
+      for (let minutes = 0; minutes <= max; minutes += 15) {
+        const option = document.createElement('option');
+        option.value = minutes;
+        option.textContent = minutes === 0 ? '없음 (0분)' : `${minutes}분${minutes >= 60 ? ` · ${Math.floor(minutes / 60)}시간${minutes % 60 ? ` ${minutes % 60}분` : ''}` : ''}`;
+        select.append(option);
+      }
+      select.value = selected;
+    }
+    fillDurationSelect(travel, 360, 45);
+    fillDurationSelect(buffer, 180, 15);
+
+    function makeGroup(title, items, idPrefix) {
+      const group = document.createElement('section');
+      group.className = 'group';
+      const heading = document.createElement('h3');
+      heading.textContent = title;
+      group.append(heading);
+      const list = document.createElement('div');
+      list.className = 'check-list';
+      items.forEach((item, index) => {
+        const label = document.createElement('label');
+        label.className = 'check-row';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'item-check';
+        input.id = `${idPrefix}-${index}`;
+        const text = document.createElement('span');
+        text.textContent = item;
+        label.append(input, text);
+        list.append(label);
+      });
+      group.append(list);
+      return group;
+    }
+
+    function renderChecklists() {
+      checklists.replaceChildren();
+      checklists.append(makeGroup('모든 방문자 공통', commonItems, 'common'));
+      const selected = [...situations.querySelectorAll('input:checked')].map(input => input.value);
+      selected.forEach(key => {
+        const group = situationItems[key];
+        checklists.append(makeGroup(group.title, group.items, key));
+      });
+      if (selected.length === 0) {
+        const note = document.createElement('p');
+        note.className = 'empty';
+        note.textContent = '상황을 선택하면 그에 맞는 준비물이 여기에 추가됩니다.';
+        checklists.append(note);
+      }
+      checklists.querySelectorAll('.item-check').forEach(input => input.addEventListener('change', updateProgress));
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const items = [...checklists.querySelectorAll('.item-check')];
+      const checked = items.filter(input => input.checked).length;
+      progress.textContent = items.length ? `${checked} / ${items.length} 준비 완료` : '';
+    }
+
+    function formatTime(minutes) {
+      const wrapped = ((minutes % 1440) + 1440) % 1440;
+      const hour = Math.floor(wrapped / 60);
+      const minute = wrapped % 60;
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    function updateDeparture() {
+      if (!arrival.value) {
+        departure.textContent = '—';
+        calculation.textContent = '도착 시간과 이동 시간을 확인해 주세요.';
+        return;
+      }
+      const [hours, minutes] = arrival.value.split(':').map(Number);
+      const arrivalMinutes = hours * 60 + minutes;
+      const travelMinutes = Number(travel.value);
+      const bufferMinutes = Number(buffer.value);
+      const rawDeparture = arrivalMinutes - travelMinutes - bufferMinutes;
+      const dayNote = rawDeparture < 0 ? ' (전날 출발)' : '';
+      departure.textContent = `${formatTime(rawDeparture)}${dayNote}`;
+      calculation.textContent = `도착 ${arrival.value} · 이동 ${travelMinutes}분 · 여유 ${bufferMinutes}분`;
+    }
+
+    situations.addEventListener('change', renderChecklists);
+    [arrival, travel, buffer].forEach(control => control.addEventListener('input', updateDeparture));
+    document.getElementById('reset').addEventListener('click', () => {
+      arrival.value = '10:00';
+      travel.value = '45';
+      buffer.value = '15';
+      updateDeparture();
+      arrival.focus();
+    });
+    renderChecklists();
+    updateDeparture();
+  </script>
+</body>
+</html>
